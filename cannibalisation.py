@@ -32,6 +32,7 @@ if st.button("Analyser"):
             st.error("Le fichier Excel doit contenir une colonne nommée 'Address'.")
         else:
             urls = df_urls["Address"].tolist()
+
             # Créer une liste pour stocker les résultats
             data = []
 
@@ -42,28 +43,34 @@ if st.button("Analyser"):
 
             df = pd.DataFrame(data)
 
-            # Charger le tokenizer et le modèle BERT
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            model = BertModel.from_pretrained('bert-base-uncased')
+            # Filtrer les lignes où le contenu est non vide
+            df = df[df['Contenu'] != ""]
+            df = df[df['Contenu'] != "Contenu principal non trouvé."]
+            df = df.dropna(subset=['Contenu'])
 
-            # Calculer les embeddings pour chaque contenu
-            embeddings = []
-            for content in df['Contenu']:
-                if content:  # Vérifier que le contenu n'est pas vide
+            if df.empty:
+                st.warning("Aucun contenu valide n'a été trouvé pour les URLs fournies.")
+            else:
+                # Charger le tokenizer et le modèle BERT
+                tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+                model = BertModel.from_pretrained('bert-base-uncased')
+
+                # Calculer les embeddings pour chaque contenu
+                embeddings = []
+                for content in df['Contenu']:
                     inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
                     with torch.no_grad():
                         outputs = model(**inputs)
                     embedding = outputs.last_hidden_state.mean(dim=1).numpy()
                     embeddings.append(embedding)
 
-            if embeddings:  # Vérifier que la liste d'embeddings n'est pas vide
                 # Convertir la liste d'embeddings en un tableau numpy
                 embeddings_matrix = torch.vstack([torch.tensor(emb) for emb in embeddings]).numpy()
 
                 # Calculer la similarité cosinus
                 similarity_matrix = cosine_similarity(embeddings_matrix)
 
-                # Créer un DataFrame pour les scores de similarité
+                # Créer un DataFrame pour les scores de similarité avec les URLs filtrées
                 similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
 
                 # Afficher le DataFrame de similarité
@@ -71,9 +78,7 @@ if st.button("Analyser"):
                 st.dataframe(similarity_df)
 
                 # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
-                similarity_df.to_csv("similarity_scores.csv", index=False)
-                st.success("Les scores de similarité ont été sauvegardés dans 'similarity_scores.csv'.")
-            else:
-                st.warning("Aucun contenu valide n'a été trouvé pour les URLs fournies.")
+                csv = similarity_df.to_csv(index=True)
+                st.download_button("Télécharger les scores de similarité", csv, "similarity_scores.csv")
     else:
         st.error("Veuillez uploader un fichier Excel avec les URLs.")
