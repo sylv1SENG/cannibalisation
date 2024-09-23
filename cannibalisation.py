@@ -5,7 +5,6 @@ import torch
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
-from serpapi import GoogleSearch
 
 # Fonction pour récupérer le contenu principal
 def get_main_content(url):
@@ -18,31 +17,11 @@ def get_main_content(url):
     except Exception as e:
         return f"Erreur lors de la récupération de {url}: {e}"
 
-# Fonction pour récupérer les résultats de recherche Google
-def get_google_results(query, api_key):
-    params = {
-        "engine": "google",
-        "q": query,
-        "num": 10,
-        "api_key": api_key
-    }
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    
-    if "organic_results" in results:
-        return [(result["title"], result["link"]) for result in results["organic_results"]]
-    else:
-        return []
-
 # Interface Streamlit
 st.title("Analyse de Similarité Cosinus avec BERT")
 
 # Uploader le fichier Excel
 uploaded_file = st.file_uploader("Choisissez un fichier Excel avec les URLs", type=["xls", "xlsx"])
-
-# Saisir la requête de recherche
-query = st.text_input("Entrez votre requête de recherche:")
-api_key = st.text_input("Entrez votre clé API SerpApi:", type="password")
 
 if st.button("Analyser"):
     if uploaded_file is not None:
