@@ -70,15 +70,26 @@ if st.button("Analyser"):
                 # Calculer la similarité cosinus
                 similarity_matrix = cosine_similarity(embeddings_matrix)
 
-                # Créer un DataFrame pour les scores de similarité avec les URLs filtrées
-                similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
+                # Créer une liste pour stocker les résultats de similarité sous forme de paires
+                similarity_data = []
+                for i, url_1 in enumerate(df['URL']):
+                    for j, url_2 in enumerate(df['URL']):
+                        if i != j:  # On évite de comparer une URL avec elle-même
+                            similarity_data.append({
+                                "URL": url_1,
+                                "URL Comparée": url_2,
+                                "Score de Similarité": similarity_matrix[i][j]
+                            })
+
+                # Créer un DataFrame pour les scores de similarité
+                similarity_df = pd.DataFrame(similarity_data)
 
                 # Afficher le DataFrame de similarité
-                st.write("Scores de Similarité Cosinus:")
+                st.write("Scores de Similarité Cosinus (paires d'URLs):")
                 st.dataframe(similarity_df)
 
-                # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
-                csv = similarity_df.to_csv(index=True)
+                # Sauvegarder le DataFrame de similarité dans un fichier CSV
+                csv = similarity_df.to_csv(index=False)
                 st.download_button("Télécharger les scores de similarité", csv, "similarity_scores.csv")
     else:
         st.error("Veuillez uploader un fichier Excel avec les URLs.")
