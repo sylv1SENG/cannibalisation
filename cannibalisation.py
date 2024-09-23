@@ -28,10 +28,10 @@ if st.button("Analyser"):
         # Lire le fichier Excel
         df_urls = pd.read_excel(uploaded_file)
         
-        if "Url" not in df_urls.columns:
-            st.error("Le fichier Excel doit contenir une colonne nommée 'Url'.")
+        if "Address" not in df_urls.columns:
+            st.error("Le fichier Excel doit contenir une colonne nommée 'Address'.")
         else:
-            urls = df_urls["Url"].tolist()
+            urls = df_urls["Address"].tolist()
             # Créer une liste pour stocker les résultats
             data = []
 
