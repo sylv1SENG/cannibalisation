@@ -1,7 +1,6 @@
 streamlit
+tensorflow
+tensorflow-hub
+beautifulsoup4
 pandas
 requests
-beautifulsoup4
-sentence-transformers
-nltk
-openpyxl
