@@ -49,27 +49,31 @@ if st.button("Analyser"):
             # Calculer les embeddings pour chaque contenu
             embeddings = []
             for content in df['Contenu']:
-                inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
-                with torch.no_grad():
-                    outputs = model(**inputs)
-                embedding = outputs.last_hidden_state.mean(dim=1).numpy()
-                embeddings.append(embedding)
+                if content:  # Vérifier que le contenu n'est pas vide
+                    inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
+                    with torch.no_grad():
+                        outputs = model(**inputs)
+                    embedding = outputs.last_hidden_state.mean(dim=1).numpy()
+                    embeddings.append(embedding)
 
-            # Convertir la liste d'embeddings en un tableau numpy
-            embeddings_matrix = torch.vstack(embeddings).numpy()
+            if embeddings:  # Vérifier que la liste d'embeddings n'est pas vide
+                # Convertir la liste d'embeddings en un tableau numpy
+                embeddings_matrix = torch.vstack([torch.tensor(emb) for emb in embeddings]).numpy()
 
-            # Calculer la similarité cosinus
-            similarity_matrix = cosine_similarity(embeddings_matrix)
+                # Calculer la similarité cosinus
+                similarity_matrix = cosine_similarity(embeddings_matrix)
 
-            # Créer un DataFrame pour les scores de similarité
-            similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
+                # Créer un DataFrame pour les scores de similarité
+                similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
 
-            # Afficher le DataFrame de similarité
-            st.write("Scores de Similarité Cosinus:")
-            st.dataframe(similarity_df)
+                # Afficher le DataFrame de similarité
+                st.write("Scores de Similarité Cosinus:")
+                st.dataframe(similarity_df)
 
-            # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
-            similarity_df.to_csv("similarity_scores.csv", index=False)
-            st.success("Les scores de similarité ont été sauvegardés dans 'similarity_scores.csv'.")
+                # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
+                similarity_df.to_csv("similarity_scores.csv", index=False)
+                st.success("Les scores de similarité ont été sauvegardés dans 'similarity_scores.csv'.")
+            else:
+                st.warning("Aucun contenu valide n'a été trouvé pour les URLs fournies.")
     else:
         st.error("Veuillez uploader un fichier Excel avec les URLs.")
