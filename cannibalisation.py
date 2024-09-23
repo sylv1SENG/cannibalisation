@@ -51,8 +51,12 @@ if st.button("Analyser"):
                 st.warning("Aucun contenu valide n'a été trouvé pour les URLs fournies.")
             else:
                 # Charger Universal Sentence Encoder (USE) depuis TensorFlow Hub
-                model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-                model = hub.load(model_url)
+                try:
+                    model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+                    model = hub.load(model_url)
+                except Exception as e:
+                    st.error(f"Erreur lors du chargement du modèle USE: {e}")
+                    st.stop()
 
                 # Calculer les embeddings pour chaque contenu
                 embeddings = model(df['Contenu'].tolist())
