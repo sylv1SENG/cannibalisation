@@ -1,10 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import torch
-from transformers import BertTokenizer, BertModel
-from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
+import tensorflow as tf
+import tensorflow_hub as hub
 
 # Fonction pour récupérer le contenu principal
 def get_main_content(url):
@@ -18,7 +17,7 @@ def get_main_content(url):
         return f"Erreur lors de la récupération de {url}: {e}"
 
 # Interface Streamlit
-st.title("Analyse de Similarité Cosinus avec BERT")
+st.title("Analyse de Similarité Cosinus avec Universal Sentence Encoder (USE)")
 
 # Uploader le fichier Excel
 uploaded_file = st.file_uploader("Choisissez un fichier Excel avec les URLs", type=["xls", "xlsx"])
@@ -51,24 +50,15 @@ if st.button("Analyser"):
             if df.empty:
                 st.warning("Aucun contenu valide n'a été trouvé pour les URLs fournies.")
             else:
-                # Charger le tokenizer et le modèle BERT
-                tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-                model = BertModel.from_pretrained('bert-base-uncased')
+                # Charger Universal Sentence Encoder (USE) depuis TensorFlow Hub
+                model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+                model = hub.load(model_url)
 
                 # Calculer les embeddings pour chaque contenu
-                embeddings = []
-                for content in df['Contenu']:
-                    inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
-                    with torch.no_grad():
-                        outputs = model(**inputs)
-                    embedding = outputs.last_hidden_state.mean(dim=1).numpy()
-                    embeddings.append(embedding)
+                embeddings = model(df['Contenu'].tolist())
 
-                # Convertir la liste d'embeddings en un tableau numpy
-                embeddings_matrix = torch.vstack([torch.tensor(emb) for emb in embeddings]).numpy()
-
-                # Calculer la similarité cosinus
-                similarity_matrix = cosine_similarity(embeddings_matrix)
+                # Calculer la similarité cosinus entre les embeddings
+                similarity_matrix = tf.keras.backend.eval(tf.matmul(embeddings, embeddings, transpose_b=True))
 
                 # Créer une liste pour stocker les résultats de similarité sous forme de paires
                 similarity_data = []
