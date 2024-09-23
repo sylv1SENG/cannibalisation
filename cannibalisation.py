@@ -37,50 +37,60 @@ def get_google_results(query, api_key):
 # Interface Streamlit
 st.title("Analyse de Similarité Cosinus avec BERT")
 
+# Uploader le fichier Excel
+uploaded_file = st.file_uploader("Choisissez un fichier Excel avec les URLs", type=["xls", "xlsx"])
+
 # Saisir la requête de recherche
 query = st.text_input("Entrez votre requête de recherche:")
 api_key = st.text_input("Entrez votre clé API SerpApi:", type="password")
 
-if st.button("Rechercher"):
-    if query and api_key:
-        results = get_google_results(query, api_key)
+if st.button("Analyser"):
+    if uploaded_file is not None:
+        # Lire le fichier Excel
+        df_urls = pd.read_excel(uploaded_file)
         
-        # Récupérer le contenu pour chaque URL
-        data = []
-        for title, url in results:
-            content = get_main_content(url)
-            data.append({"URL": url, "Contenu": content})
+        if "Url" not in df_urls.columns:
+            st.error("Le fichier Excel doit contenir une colonne nommée 'Url'.")
+        else:
+            urls = df_urls["Url"].tolist()
+            # Créer une liste pour stocker les résultats
+            data = []
 
-        df = pd.DataFrame(data)
+            # Récupérer le contenu pour chaque URL
+            for url in urls:
+                content = get_main_content(url)
+                data.append({"URL": url, "Contenu": content})
 
-        # Charger le tokenizer et le modèle BERT
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertModel.from_pretrained('bert-base-uncased')
+            df = pd.DataFrame(data)
 
-        # Calculer les embeddings pour chaque contenu
-        embeddings = []
-        for content in df['Contenu']:
-            inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
-            with torch.no_grad():
-                outputs = model(**inputs)
-            embedding = outputs.last_hidden_state.mean(dim=1).numpy()
-            embeddings.append(embedding)
+            # Charger le tokenizer et le modèle BERT
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            model = BertModel.from_pretrained('bert-base-uncased')
 
-        # Convertir la liste d'embeddings en un tableau numpy
-        embeddings_matrix = torch.vstack(embeddings).numpy()
+            # Calculer les embeddings pour chaque contenu
+            embeddings = []
+            for content in df['Contenu']:
+                inputs = tokenizer(content, return_tensors="pt", truncation=True, padding=True)
+                with torch.no_grad():
+                    outputs = model(**inputs)
+                embedding = outputs.last_hidden_state.mean(dim=1).numpy()
+                embeddings.append(embedding)
 
-        # Calculer la similarité cosinus
-        similarity_matrix = cosine_similarity(embeddings_matrix)
+            # Convertir la liste d'embeddings en un tableau numpy
+            embeddings_matrix = torch.vstack(embeddings).numpy()
 
-        # Créer un DataFrame pour les scores de similarité
-        similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
+            # Calculer la similarité cosinus
+            similarity_matrix = cosine_similarity(embeddings_matrix)
 
-        # Afficher le DataFrame de similarité
-        st.write("Scores de Similarité Cosinus:")
-        st.dataframe(similarity_df)
+            # Créer un DataFrame pour les scores de similarité
+            similarity_df = pd.DataFrame(similarity_matrix, index=df['URL'], columns=df['URL'])
 
-        # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
-        similarity_df.to_csv("similarity_scores.csv", index=False)
-        st.success("Les scores de similarité ont été sauvegardés dans 'similarity_scores.csv'.")
+            # Afficher le DataFrame de similarité
+            st.write("Scores de Similarité Cosinus:")
+            st.dataframe(similarity_df)
+
+            # Optionnel : Sauvegarder le DataFrame de similarité dans un fichier CSV
+            similarity_df.to_csv("similarity_scores.csv", index=False)
+            st.success("Les scores de similarité ont été sauvegardés dans 'similarity_scores.csv'.")
     else:
-        st.error("Veuillez entrer une requête et votre clé API.")
+        st.error("Veuillez uploader un fichier Excel avec les URLs.")
