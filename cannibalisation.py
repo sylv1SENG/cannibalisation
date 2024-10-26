@@ -1,23 +1,16 @@
-import subprocess
-import sys
-
-# Fonction pour installer automatiquement une bibliothèque manquante
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Vérifiez si openpyxl est installé, sinon installez-le
-try:
-    import openpyxl
-except ImportError:
-    install("openpyxl")
-
-# Importation des autres bibliothèques nécessaires
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import streamlit as st
 import tensorflow as tf
 import tensorflow_hub as hub
+
+# Vérifiez si openpyxl est installé, sinon afficher un message d'erreur
+try:
+    import openpyxl
+except ImportError:
+    st.error("La bibliothèque 'openpyxl' est requise pour lire les fichiers Excel. Veuillez l'installer en exécutant la commande suivante :\n\npip install openpyxl")
+    st.stop()
 
 # Fonction pour récupérer le contenu principal
 def get_main_content(url):
@@ -41,9 +34,6 @@ if st.button("Analyser"):
         try:
             # Utiliser le moteur 'openpyxl' explicitement
             df_urls = pd.read_excel(uploaded_file, engine='openpyxl')
-        except ImportError:
-            st.error("La bibliothèque 'openpyxl' est requise pour lire les fichiers Excel. Veuillez l'installer avec la commande : pip install openpyxl")
-            st.stop()
         except Exception as e:
             st.error(f"Erreur lors de la lecture du fichier Excel : {e}")
             st.stop()
