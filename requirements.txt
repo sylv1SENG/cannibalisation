@@ -4,3 +4,4 @@ tensorflow-hub
 beautifulsoup4
 pandas
 requests
+openpyxl
