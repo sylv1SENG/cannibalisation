@@ -24,7 +24,15 @@ uploaded_file = st.file_uploader("Choisissez un fichier Excel avec les URLs", ty
 
 if st.button("Analyser"):
     if uploaded_file is not None:
-        df_urls = pd.read_excel(uploaded_file)
+        try:
+            # Utiliser le moteur 'openpyxl' explicitement
+            df_urls = pd.read_excel(uploaded_file, engine='openpyxl')
+        except ImportError:
+            st.error("La bibliothèque 'openpyxl' est requise pour lire les fichiers Excel. Veuillez l'installer avec la commande : pip install openpyxl")
+            st.stop()
+        except Exception as e:
+            st.error(f"Erreur lors de la lecture du fichier Excel : {e}")
+            st.stop()
         
         if "Address" not in df_urls.columns:
             st.error("Le fichier Excel doit contenir une colonne nommée 'Address'.")
@@ -38,6 +46,7 @@ if st.button("Analyser"):
 
             df = pd.DataFrame(data)
 
+            # Filtrer les contenus vides ou invalides
             df = df[df['Contenu'] != ""]
             df = df[df['Contenu'] != "Contenu principal non trouvé."]
             df = df.dropna(subset=['Contenu'])
