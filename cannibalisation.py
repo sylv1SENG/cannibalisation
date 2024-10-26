@@ -1,3 +1,17 @@
+import subprocess
+import sys
+
+# Fonction pour installer automatiquement une bibliothèque manquante
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# Vérifiez si openpyxl est installé, sinon installez-le
+try:
+    import openpyxl
+except ImportError:
+    install("openpyxl")
+
+# Importation des autres bibliothèques nécessaires
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
